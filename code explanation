@@ -1,0 +1,101 @@
+import streamlit as st
+import torchreid
+import os
+from PIL import Image
+from torchvision import transforms
+import torch
+
+streamlit: Used to build the web interface.
+
+torchreid: TorchReID is a library for person re-identification using deep neural networks.
+
+PIL.Image: Used to load and handle image files.
+
+torchvision.transforms: To apply preprocessing on images (resize, normalize).
+
+torch: For model inference and cosine similarity calculation.
+
+
+
+Streamlit Page Settings
+st.set_page_config(page_title="Person Re-ID", layout="centered")
+This configures the page title, and layout of the Streamlit app
+
+
+
+
+st.title(" Person Re-Identification")
+st.write("Upload two person images (possibly from different cameras), and we'll check if they match.")
+Displays the app's title and a short description to guide the user.
+
+
+@st.cache_resource
+def load_model():
+    model = torchreid.models.build_model(
+        name='osnet_x1_0',
+        num_classes=1000,
+        pretrained=True
+    )
+    model.eval()
+    return model
+
+##Loads a pre-trained OSNet model (osnet_x1_0) from TorchReID.
+@st.cache_resource ensures the model loads only once, even on reruns, improving speed.
+
+model = load_model()
+##Calls the function and stores the model object for inference.
+
+
+transform = transforms.Compose([
+    transforms.Resize((256, 128)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+##Resize image to 256x128 (common in ReID datasets).
+Convert to Tensor (PyTorch format).
+Normalize the pixel values with standard ImageNet mean and std.
+
+
+img1 = st.file_uploader("📷 Upload image from Camera A", type=["jpg", "png"], key="img1")
+img2 = st.file_uploader("📷 Upload image from Camera B", type=["jpg", "png"], key="img2")
+
+##Opens both uploaded images and converts them to RGB.
+Displays the images with captions and fixed width.
+
+
+    with torch.no_grad():
+        tensor1 = transform(image1).unsqueeze(0)
+        tensor2 = transform(image2).unsqueeze(0)
+
+        feat1 = model(tensor1)
+        feat2 = model(tensor2)
+
+        similarity = torch.nn.functional.cosine_similarity(feat1, feat2).item()
+
+##Converts each image into a tensor and runs it through the model to get feature embeddings.
+Then calculates the cosine similarity between the two feature vectors.
+A value close to 1 → high similarity.
+Close to 0 → low similarity.
+
+  
+  st.write(f"🔍 Cosine Similarity: **{similarity:.4f}**")
+    if similarity > 0.7:
+        st.success("✅ Likely same person")
+    else:
+        st.error("❌ Likely different persons")
+##Shows similarity score.
+If above 0.7, the app assumes the person is the same.
+Else, the app displays an error message suggesting they are different.
+
+
+else:
+    st.info("Please upload both images to begin re-identification.")
+##This message is shown if the user hasn't uploaded both images yet.
+
+
+
+
+
+
+
+
