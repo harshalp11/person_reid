@@ -1,6 +1,4 @@
 
-# person_reid_app.py
-# Simple person re-identification example using torchreid and Streamlit
 
 import streamlit as st
 import torchreid
@@ -12,7 +10,6 @@ import torch
 st.title("🎥 Person Re-Identification")
 st.write("Upload two person images (possibly from different cameras), and we'll check if they match.")
 
-# Load model
 @st.cache_resource
 def load_model():
     model = torchreid.models.build_model(
@@ -25,14 +22,12 @@ def load_model():
 
 model = load_model()
 
-# Image transform
 transform = transforms.Compose([
     transforms.Resize((256, 128)),
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-# Upload images
 img1 = st.file_uploader("Upload image from Camera A", type=["jpg", "png"], key="img1")
 img2 = st.file_uploader("Upload image from Camera B", type=["jpg", "png"], key="img2")
 
